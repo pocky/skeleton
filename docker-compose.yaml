@@ -1,0 +1,44 @@
+version: '3.4'
+
+networks:
+  backend: ~
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - "./:/var/www/html:rw,cached"
+      - "~/.composer/auth.json:/root/.composer/auth.json:ro"
+    networks:
+      backend: ~
+      
+  nginx:
+    image: nginx:latest
+    depends_on:
+      - php
+    volumes:
+      - "./docker/nginx/conf.d:/etc/nginx/conf.d:ro"
+      - "./public:/var/www/html/public:ro"
+    ports:
+      - "80"
+    networks:
+      backend: ~ 
+
+  db:
+    image: postgres:9.6-alpine
+    environment:
+      - POSTGRES_DB=hades
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+    volumes:
+      - db-data:/var/lib/postgresql/data:rw,delegated
+      - ./docker/db/data:/var/lib/postgresql/data:rw,delegated
+    ports:
+      - "5432:5432"
+    networks:
+      backend: ~
+
+volumes:
+  db-data: {}
